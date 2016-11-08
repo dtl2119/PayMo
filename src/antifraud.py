@@ -63,14 +63,14 @@ def feature2(batchFilePath, streamFilePath, output2FilePath):
             # Check the set intersection
             # FIXME: Check, should I set() above?  Or maybe set in the buildBatchGraph2?
             # FIXME: May want to convert both to sets, then check intersection
-            #if set(id1Friends).disjoint(id2Friends):
             # advantage: O(n + m) since sets stored using hashes in python
-            if any(i in id1Friends for i in id2Friends): #generator?  Also, done after match found
-                outFile2.write("trusted\n")
-                #print "trusted"
-            else:
+            #if any(i in id1Friends for i in id2Friends): #generator?  Also, done after match found
+            if set(id1Friends).isdisjoint(id2Friends):
                 outFile2.write("unverified\n")
                 #print "unverified"
+            else:
+                outFile2.write("trusted\n")
+                #print "trusted"
 
     print datetime.now()#FIXME
 
