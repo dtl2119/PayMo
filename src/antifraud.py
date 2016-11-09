@@ -7,6 +7,67 @@ import sys
 from datetime import datetime, time
 
 
+def feature3(batchFilePath, streamFilePath, output3FilePath):
+    """
+    Trusted if the two users have mutual friends (i.e. have
+    previously made a transaction with the same person)
+    """
+    print datetime.now()#FIXME
+    batchGraph = buildBatchGraph2(batchFilePath) #FIXME: change name of func if using in feature3
+    print datetime.now()#FIXME
+
+    with open(streamFilePath) as streamFile, open(output3FilePath, "w") as outFile3:
+        next(streamFile) # Skip header: 'time, id1, id2, amount, message'
+        for line in streamFile:
+            try:
+                time, id1, id2, amt, msg = line.split(', ', 4)
+            except ValueError as e:
+                print "Unable to parse line: %s" % line
+                continue
+            
+            #lower = id1 if id1 < id2 else id2
+            id1 = int(id1)
+            id2 = int(id2)
+
+            # Get transaction list for user1 (doesn't matter which user)
+            id1Friends = set(batchGraph[id1]) if id1 in batchGraph else []
+            #id2Friends = batchGraph[id2] if id2 in batchGraph else []
+
+
+            # Brute force
+            #usersFourAway = id1Friends
+            if id2 in id1Friends:
+                outFile3.write("trusted\n")
+                continue
+
+            second = []
+            for f in id1Friends:
+                second.extend(set(batchGraph[f]))
+            if id2 in second:
+                outFile3.write("trusted\n")
+                continue
+
+            third = []
+            for f in second:
+                third.extend(set(batchGraph[f]))
+            if id2 in third:
+                outFile3.write("trusted\n")
+                continue
+
+            fourth = []
+            for f in third:
+                fourth.extend(set(batchGraph[f]))
+            if id2 in fourth:
+                outFile3.write("trusted\n")
+                continue
+
+
+            outFile3.write("unverified\n")
+            
+
+    print datetime.now()#FIXME
+
+
 
 def buildBatchGraph2(batchFilePath):
     """
@@ -155,13 +216,21 @@ if __name__ == '__main__':
         streamFilePath = sys.argv[2]
         output1FilePath = sys.argv[3]
         output2FilePath = sys.argv[4]
-        #output3FilePath = sys.argv[5]
+        output3FilePath = sys.argv[5]
     except IndexError as e:
         usage()
 
     try:
         #feature1(batchFilePath, streamFilePath, output1FilePath)
-        feature2(batchFilePath, streamFilePath, output2FilePath)
+        #feature2(batchFilePath, streamFilePath, output2FilePath)
+        feature3(batchFilePath, streamFilePath, output3FilePath)
     except IOError as e:
         print e
         usage()
+
+
+
+#FIXME NOTES:
+# Consider making "friend" sets rather than lists in the BuildBatchGraph functions
+# Should probably return something in all the feature{1,2,3} functions
+
