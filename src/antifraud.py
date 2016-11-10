@@ -7,13 +7,62 @@ import sys
 from datetime import datetime, time
 
 
+
+def buildBatchGraph3(batchFilePath):
+    """
+    BUILDS BATCH GRAPH FOR FEATURE 1
+    Builds graph to from batch_payment.csv file,
+    which contains past user payment data
+    """
+    batchGraph = {} # key: value --> lower_id: higher_id
+
+    with open(batchFilePath) as batchFile:
+        # Graph is undirected: as long as the 2 have made a transaction 
+        # Thus we can order it by id number
+        next(batchFile) # Skip header: 'time, id1, id2, amount, message'
+        for line in batchFile:
+            try:
+                time, id1, id2, amt, msg = line.split(', ', 4)
+            except ValueError as e:
+                print "Unable to parse line: %s" % line
+                continue
+            id1 = int(id1)
+            id2 = int(id2)
+            batchGraph.setdefault(id1, []).append(id2)
+            batchGraph.setdefault(id2, []).append(id1)
+
+    return batchGraph
+
+def isWithin(graph, k, id1, id2):
+    """
+    Returns True if id1 and id2 are within 4 degrees, else
+    it returns False.  
+    In our case, k == 4
+    """
+    # userids 1 away
+    if id1 not in graph or id2 not in graph:
+        return False
+    else:
+        network = graph[id1] # 1st degree users
+        
+    if id2 in network:
+        return True
+
+    for i in range(k-1):
+        for user in network:
+            network = list(set(network + graph[user]))
+        if id2 in network:
+            return True
+
+    return False
+
 def feature3(batchFilePath, streamFilePath, output3FilePath):
     """
     Trusted if the two users have mutual friends (i.e. have
     previously made a transaction with the same person)
     """
     print datetime.now()#FIXME
-    batchGraph = buildBatchGraph2(batchFilePath) #FIXME: change name of func if using in feature3
+    batchGraph = buildBatchGraph3(batchFilePath) #FIXME: change name of func if using in feature3
     print datetime.now()#FIXME
 
     with open(streamFilePath) as streamFile, open(output3FilePath, "w") as outFile3:
@@ -29,39 +78,12 @@ def feature3(batchFilePath, streamFilePath, output3FilePath):
             id1 = int(id1)
             id2 = int(id2)
 
-            # Get transaction list for user1 (doesn't matter which user)
-            id1Friends = set(batchGraph[id1]) if id1 in batchGraph else []
-            #id2Friends = batchGraph[id2] if id2 in batchGraph else []
-
-
-            # Brute force
-            #usersFourAway = id1Friends
-            if id2 in id1Friends:
-                outFile3.write("trusted\n")
+            if isWithin(batchGraph, 4, id1, id2):
+                #outFile3.write("trusted\n")
+                print "trusted" #FIXME REMOVEME
                 continue
 
-            second = []
-            for f in id1Friends:
-                second.extend(set(batchGraph[f]))
-            if id2 in second:
-                outFile3.write("trusted\n")
-                continue
-
-            third = []
-            for f in second:
-                third.extend(set(batchGraph[f]))
-            if id2 in third:
-                outFile3.write("trusted\n")
-                continue
-
-            fourth = []
-            for f in third:
-                fourth.extend(set(batchGraph[f]))
-            if id2 in fourth:
-                outFile3.write("trusted\n")
-                continue
-
-
+            print "unverified" #FIXME REMOVEME
             outFile3.write("unverified\n")
             
 
