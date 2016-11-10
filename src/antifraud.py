@@ -42,17 +42,15 @@ def isWithin(graph, k, id1, id2):
     # userids 1 away
     if id1 not in graph or id2 not in graph:
         return False
-    else:
-        network = graph[id1] # 1st degree users
-        
-    if id2 in network:
-        return True
 
-    for i in range(k-1):
-        for user in network:
-            network = list(set(network + graph[user]))
+    network = graph[id1] # 1st degree users
+    print "ID1: %s ID2: %s" % (id1, id2) #FIXME REMOVE
+    for i in range(k):
+        print "network length: %s" % len(network) #FIXME REMOVE
         if id2 in network:
             return True
+        for user in network:
+            network = list(set(network + graph[user]))
 
     return False
 
@@ -255,4 +253,3 @@ if __name__ == '__main__':
 #FIXME NOTES:
 # Consider making "friend" sets rather than lists in the BuildBatchGraph functions
 # Should probably return something in all the feature{1,2,3} functions
-
