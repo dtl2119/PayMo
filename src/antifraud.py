@@ -22,6 +22,7 @@ def buildBatchGraph1(batchFilePath):
                 continue
             id1 = int(id1)
             id2 = int(id2)
+            # Always have the lower user id be the key (only for feature1)
             batchGraph.setdefault(id1, []).append(id2) if id1 < id2 else batchGraph.setdefault(id2, []).append(id1)
 
     return batchGraph
