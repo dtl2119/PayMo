@@ -112,8 +112,13 @@ def feature2(batchFilePath, streamFilePath, output2FilePath):
                 outFile2.write("unverified\n")
                 continue
 
+            # Trusted if they're immediate friends too
+            if id2 in id1Friends or id1 in id2Friends:
+                outFile2.write("trusted\n")
+                continue
+
             # Check the set intersection
-            if not set(id1Friends).isdisjoint(id2Friends):
+            if set(id1Friends).isdisjoint(id2Friends):
                 outFile2.write("unverified\n")
                 continue
                 
