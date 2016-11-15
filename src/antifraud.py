@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import sys
+from datetime import datetime, time
 
 def buildBatchGraph1(batchFilePath):
     """
@@ -23,7 +24,7 @@ def buildBatchGraph1(batchFilePath):
             id1 = int(id1)
             id2 = int(id2)
             # Always have the lower user id be the key (only for feature1)
-            batchGraph.setdefault(id1, []).append(id2) if id1 < id2 else batchGraph.setdefault(id2, []).append(id1)
+            batchGraph.setdefault(id1, set()).add(id2) if id1 < id2 else batchGraph.setdefault(id2, set()).add(id1)
 
     return batchGraph
 
@@ -35,6 +36,7 @@ def feature1(batchFilePath, streamFilePath, output1FilePath):
     transaction with that user before.
     """
     batchGraph = buildBatchGraph1(batchFilePath)
+    print datetime.now()#FIXME
 
     with open(streamFilePath) as streamFile, open(output1FilePath, "w") as outFile1:
         next(streamFile) # Skip header: 'time, id1, id2, amount, message'
@@ -77,8 +79,8 @@ def buildBatchGraph(batchFilePath):
                 continue
             id1 = int(id1)
             id2 = int(id2)
-            batchGraph.setdefault(id1, []).append(id2)
-            batchGraph.setdefault(id2, []).append(id1)
+            batchGraph.setdefault(id1, set()).add(id2)
+            batchGraph.setdefault(id2, set()).add(id1)
 
     return batchGraph
 
@@ -89,6 +91,7 @@ def feature2(batchFilePath, streamFilePath, output2FilePath):
     previously made a transaction with the same person)
     """
     batchGraph = buildBatchGraph(batchFilePath)
+    print datetime.now()#FIXME
 
     with open(streamFilePath) as streamFile, open(output2FilePath, "w") as outFile2:
         next(streamFile) # Skip header: 'time, id1, id2, amount, message'
@@ -118,7 +121,7 @@ def feature2(batchFilePath, streamFilePath, output2FilePath):
                 continue
 
             # Check the set intersection
-            if set(id1Friends).isdisjoint(id2Friends):
+            if id1Friends.isdisjoint(id2Friends):
                 outFile2.write("unverified\n")
                 continue
                 
@@ -153,13 +156,25 @@ def isWithin(graph, k, id1, id2):
 
     return False
 
+def isWithinImprove(graph, k, id1, id2):
+    True
+    
+    #if id1 not in graph or id2 not in graph:
+    #    return False
+
+    
+    
+
+
+
 def feature3(batchFilePath, streamFilePath, output3FilePath):
     """
     Trusted if the two users have mutual friends (i.e. have
     previously made a transaction with the same person)
     """
     batchGraph = buildBatchGraph(batchFilePath)
-    
+    print datetime.now()#FIXME
+
     with open(streamFilePath) as streamFile, open(output3FilePath, "w") as outFile3:
         next(streamFile) # Skip header: 'time, id1, id2, amount, message'
         for line in streamFile:
@@ -173,10 +188,12 @@ def feature3(batchFilePath, streamFilePath, output3FilePath):
             id1 = int(id1)
             id2 = int(id2)
 
-            if isWithin(batchGraph, 4, id1, id2):
+            if isWithinImprove(batchGraph, 4, id1, id2): #FIXME function name
+                print "trusted" #FIXME
                 outFile3.write("trusted\n")
                 continue
 
+            print "unverified" #FIXME
             outFile3.write("unverified\n")
             
 
@@ -200,9 +217,13 @@ if __name__ == '__main__':
         usage()
 
     try:
-        feature1(batchFilePath, streamFilePath, output1FilePath)
+        #print datetime.now()#FIXME
+        #feature1(batchFilePath, streamFilePath, output1FilePath)
+        print datetime.now()#FIXME
         feature2(batchFilePath, streamFilePath, output2FilePath)
-        feature3(batchFilePath, streamFilePath, output3FilePath)
+        print datetime.now()#FIXME
+        #feature3(batchFilePath, streamFilePath, output3FilePath)
+        #print datetime.now()#FIXME
     except IOError as e:
         print e
         usage()
