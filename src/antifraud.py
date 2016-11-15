@@ -36,7 +36,6 @@ def feature1(batchFilePath, streamFilePath, output1FilePath):
     transaction with that user before.
     """
     batchGraph = buildBatchGraph1(batchFilePath)
-    print datetime.now()#FIXME
 
     with open(streamFilePath) as streamFile, open(output1FilePath, "w") as outFile1:
         next(streamFile) # Skip header: 'time, id1, id2, amount, message'
@@ -91,7 +90,6 @@ def feature2(batchFilePath, streamFilePath, output2FilePath):
     previously made a transaction with the same person)
     """
     batchGraph = buildBatchGraph(batchFilePath)
-    print datetime.now()#FIXME
 
     with open(streamFilePath) as streamFile, open(output2FilePath, "w") as outFile2:
         next(streamFile) # Skip header: 'time, id1, id2, amount, message'
@@ -156,16 +154,6 @@ def isWithin(graph, k, id1, id2):
 
     return False
 
-def isWithinImprove(graph, k, id1, id2):
-    True
-    
-    #if id1 not in graph or id2 not in graph:
-    #    return False
-
-    
-    
-
-
 
 def feature3(batchFilePath, streamFilePath, output3FilePath):
     """
@@ -173,7 +161,6 @@ def feature3(batchFilePath, streamFilePath, output3FilePath):
     previously made a transaction with the same person)
     """
     batchGraph = buildBatchGraph(batchFilePath)
-    print datetime.now()#FIXME
 
     with open(streamFilePath) as streamFile, open(output3FilePath, "w") as outFile3:
         next(streamFile) # Skip header: 'time, id1, id2, amount, message'
@@ -188,12 +175,10 @@ def feature3(batchFilePath, streamFilePath, output3FilePath):
             id1 = int(id1)
             id2 = int(id2)
 
-            if isWithinImprove(batchGraph, 4, id1, id2): #FIXME function name
-                print "trusted" #FIXME
+            if isWithin(batchGraph, 4, id1, id2):
                 outFile3.write("trusted\n")
                 continue
 
-            print "unverified" #FIXME
             outFile3.write("unverified\n")
             
 
@@ -217,13 +202,9 @@ if __name__ == '__main__':
         usage()
 
     try:
-        #print datetime.now()#FIXME
-        #feature1(batchFilePath, streamFilePath, output1FilePath)
-        print datetime.now()#FIXME
+        feature1(batchFilePath, streamFilePath, output1FilePath)
         feature2(batchFilePath, streamFilePath, output2FilePath)
-        print datetime.now()#FIXME
-        #feature3(batchFilePath, streamFilePath, output3FilePath)
-        #print datetime.now()#FIXME
+        feature3(batchFilePath, streamFilePath, output3FilePath)
     except IOError as e:
         print e
         usage()
