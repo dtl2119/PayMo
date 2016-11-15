@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import sys
-from datetime import datetime, time
+from datetime import datetime
 
 def buildBatchGraph1(batchFilePath):
     """
@@ -127,33 +127,53 @@ def feature2(batchFilePath, streamFilePath, output2FilePath):
 
 
 
-def isWithin(graph, k, id1, id2):
+def isWithinFour(graph, id1, id2):
     """
-    Returns True if id1 and id2 are within 4 degrees, else
-    it returns False.  In our case, k == 4
+    Returns True if id1 and id2 are within 4 degrees, 
+    else it returns False
     """
-    visited = set([id1]) # Keep track of users already visited
 
+    # If neither have made a previous transaction, unverified
     if id1 not in graph or id2 not in graph:
         return False
 
-    # Start with 1st degree users (immediate friends)
-    network = set(graph[id1])
-    for i in range(k):
-        if id2 in network: # O(1)
+    id1Network = graph[id1] # Friend set of user id1
+    id2Network = graph[id2] # Friend set of user id2
+   
+    # Immediate Friends
+    if id2 in id1Network:
+        return True
+
+    # Mutual Friends (1 degree)
+    if not id1Network.isdisjoint(id2Network):
+        return True
+
+    # Next loops: for both of the users, keep expanding
+    # their friend's networks (union: O(n+m) for sets), 
+    # but keep checking if the other user is in it along
+    # the way.
+    for user in id1Network:
+        id1Network = id1Network | graph[user]
+        if id2 in id1Network:
             return True
-        else:
-            visited = visited | network
-       
-        # Add all adjacent users to the network set
-        for user in network:
-            network = network | set(graph[user])
+
+    for user in id2Network:
+        id2Network = id2Network | graph[user]
+        if id1 in id2Network:
+            return True
+
+
+    # At this point, we have two sets of users, two degrees
+    # out from both id1 and id2.  If the intersection is
+    # the empty set, isdisjoint returns true, and id1 and id2
+    # are not within 4 degrees; thus unverified
+    if id1Network.isdisjoint(id2Network):
+        return False
+
+    # Return True if the intersection is not empty
+    return True
         
-        # To avoid cycles, remove all users already visited
-        network = network - visited
-
-    return False
-
+    
 
 def feature3(batchFilePath, streamFilePath, output3FilePath):
     """
@@ -161,7 +181,7 @@ def feature3(batchFilePath, streamFilePath, output3FilePath):
     previously made a transaction with the same person)
     """
     batchGraph = buildBatchGraph(batchFilePath)
-
+    
     with open(streamFilePath) as streamFile, open(output3FilePath, "w") as outFile3:
         next(streamFile) # Skip header: 'time, id1, id2, amount, message'
         for line in streamFile:
@@ -175,7 +195,7 @@ def feature3(batchFilePath, streamFilePath, output3FilePath):
             id1 = int(id1)
             id2 = int(id2)
 
-            if isWithin(batchGraph, 4, id1, id2):
+            if isWithinFour(batchGraph, id1, id2):
                 outFile3.write("trusted\n")
                 continue
 

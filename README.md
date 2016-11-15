@@ -71,4 +71,18 @@ graph isn't too big).  For example, you could create a dictionary where the
 key is the user id, and the value is a list of all user ids that are within
 4 degrees.  This way, the time complexity is linear, and most importantly,
 the user experience is much better!
-~
+
+###FEATURE3 UPDATE:
+* I still believe all that I mentioned above will help  (i.e. continuously
+adding to the build graph w/ incoming streaming payments, building a graph 
+and caching before streaming so that the user experience is smooth, etc)
+
+* However, I dramatically improved processing time for feature 3!  I got 
+my result to an average of less than 0.0001s per streaming payment.
+
+* The idea was, for each streaming payment take the 2 user ids and expand
+each network out 2 degrees.  If you take the intersection of these 2 
+network sets, an empty set would indicate the 2 users are not within
+4 degrees.  In addition, along this process, continuously checking if 
+one user is within the other's network saved time as well.
+
