@@ -86,3 +86,28 @@ network sets, an empty set would indicate the 2 users are not within
 4 degrees.  In addition, along this process, continuously checking if 
 one user is within the other's network saved time as well.
 
+
+###RESULTS
+I was able to scale the full batch_payment.csv and stream_payment.csv files
+from dropbox!  In both files, each line represented a payment transaction.
+Excluding the headers, each file had:
+batch_payment.csv -->  3938360L
+stream_payment.csv --> 3000000L
+
+* Building the batch graph
+    * On average, this took about 11s
+* Feature1
+    * The streaming file took approximately 7.9s
+    * This is about 2.6 microseconds per transaction
+    * output1: 1456949 trusted, 1543051 unverified
+* Feature2
+    * The streaming file took approximately 9.4s
+    * This is about 3.1 microseconds per transaction
+    * output2: 2347130 trusted, 652870 unverified
+* Feature3
+    * The streaming file took approximately 40m 06s
+    * This is about 0.8 milliseconds per transaction
+    * output3: 2775426 trusted, 224574 unverified
+
+Pretty impressive, the algorithm takes less than a millisecond to verify 
+if two users are within 4 degrees of separation!
