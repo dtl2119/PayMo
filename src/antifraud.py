@@ -3,66 +3,11 @@
 import sys
 from datetime import datetime
 
-def buildBatchGraph1(batchFilePath):
-    """
-    BUILDS BATCH GRAPH FOR FEATURE 1
-    Builds graph to from batch_payment.csv file,
-    which contains past user payment data
-    """
-    batchGraph = {} # key: value --> lower_id: higher_id
-
-    with open(batchFilePath) as batchFile:
-        # Graph is undirected: as long as the 2 have made a transaction 
-        # Thus we can order it by id number
-        next(batchFile) # Skip header: 'time, id1, id2, amount, message'
-        for line in batchFile:
-            try:
-                time, id1, id2, amt, msg = line.split(', ', 4)
-            except ValueError as e:
-                print "Unable to parse line: %s" % line
-                continue
-            id1 = int(id1)
-            id2 = int(id2)
-            # Always have the lower user id be the key (only for feature1)
-            batchGraph.setdefault(id1, set()).add(id2) if id1 < id2 else batchGraph.setdefault(id2, set()).add(id1)
-
-    return batchGraph
-
-
-def feature1(batchFilePath, streamFilePath, output1FilePath):
-    """
-    When anyone makes a payment to another user, 
-    they'll be notified if they've never made a 
-    transaction with that user before.
-    """
-    batchGraph = buildBatchGraph1(batchFilePath)
-
-    with open(streamFilePath) as streamFile, open(output1FilePath, "w") as outFile1:
-        next(streamFile) # Skip header: 'time, id1, id2, amount, message'
-        for line in streamFile:
-            try:
-                time, id1, id2, amt, msg = line.split(', ', 4)
-            except ValueError as e:
-                print "Unable to parse line: %s" % line
-                continue
-            
-            # lower = id1 if id1 < id2 else id2
-            id1 = int(id1)
-            id2 = int(id2)
-            lower = min(id1, id2)
-            higher = max(id1, id2)
-
-            if lower in batchGraph and higher in batchGraph[lower]:
-                outFile1.write("trusted\n")
-            else:
-                outFile1.write("unverified\n")
-
 
 def buildBatchGraph(batchFilePath):
     """
-    BUILDS BATCH GRAPH FOR BOTH FEATURE 2 AND 3
-    Builds graph to from batch_payment.csv file,
-    which contains past user payment data
+    Builds a graph from a batch payment.csv file,
+    which contains previous user payment transactions.
     """
     batchGraph = {} # key: value --> lower_id: higher_id
 
@@ -84,12 +29,41 @@ def buildBatchGraph(batchFilePath):
     return batchGraph
 
 
-def feature2(batchFilePath, streamFilePath, output2FilePath):
+def feature1(batchGraph, streamFilePath, output1FilePath):
+    """
+    When anyone makes a payment to another user, 
+    they'll be notified if they've never made a 
+    transaction with that user before.
+    """
+
+    with open(streamFilePath) as streamFile, open(output1FilePath, "w") as outFile1:
+        next(streamFile) # Skip header: 'time, id1, id2, amount, message'
+        for line in streamFile:
+            try:
+                time, id1, id2, amt, msg = line.split(', ', 4)
+            except ValueError as e:
+                print "Unable to parse line: %s" % line
+                continue
+            
+            id1 = int(id1)
+            id2 = int(id2)
+
+            # Unverified if either user hasn't made a previous transaction
+            if id1 not in batchGraph or id2 not in batchGraph:
+                outFile1.write("unverified\n")
+                continue
+
+            if id1 in batchGraph[id2]:
+                outFile1.write("trusted\n")
+            else:
+                outFile1.write("unverified\n")
+
+
+def feature2(batchGraph, streamFilePath, output2FilePath):
     """
     Trusted if the two users have mutual friends (i.e. have
     previously made a transaction with the same person)
     """
-    batchGraph = buildBatchGraph(batchFilePath)
 
     with open(streamFilePath) as streamFile, open(output2FilePath, "w") as outFile2:
         next(streamFile) # Skip header: 'time, id1, id2, amount, message'
@@ -105,8 +79,8 @@ def feature2(batchFilePath, streamFilePath, output2FilePath):
             id2 = int(id2)
 
             # Get transaction list for each user
-            id1Friends = batchGraph[id1] if id1 in batchGraph else []
-            id2Friends = batchGraph[id2] if id2 in batchGraph else []
+            id1Friends = batchGraph[id1] if id1 in batchGraph else set()
+            id2Friends = batchGraph[id2] if id2 in batchGraph else set()
 
             # unverified if one of them has never made a transaction
             if not id1Friends or not id2Friends:
@@ -129,8 +103,8 @@ def feature2(batchFilePath, streamFilePath, output2FilePath):
 
 def isWithinFour(graph, id1, id2):
     """
-    Returns True if id1 and id2 are within 4 degrees, 
-    else it returns False
+    Helper function for feature3.  This returns True if id1
+    and id2 are within 4 degrees, else it returns False
     """
 
     # If neither have made a previous transaction, unverified
@@ -175,12 +149,11 @@ def isWithinFour(graph, id1, id2):
         
     
 
-def feature3(batchFilePath, streamFilePath, output3FilePath):
+def feature3(batchGraph, streamFilePath, output3FilePath):
     """
     Trusted if the two users have mutual friends (i.e. have
     previously made a transaction with the same person)
     """
-    batchGraph = buildBatchGraph(batchFilePath)
     
     with open(streamFilePath) as streamFile, open(output3FilePath, "w") as outFile3:
         next(streamFile) # Skip header: 'time, id1, id2, amount, message'
@@ -222,9 +195,11 @@ if __name__ == '__main__':
         usage()
 
     try:
-        feature1(batchFilePath, streamFilePath, output1FilePath)
-        feature2(batchFilePath, streamFilePath, output2FilePath)
-        feature3(batchFilePath, streamFilePath, output3FilePath)
+        batchGraph = buildBatchGraph(batchFilePath)
+        
+        feature1(batchGraph, streamFilePath, output1FilePath)
+        feature2(batchGraph, streamFilePath, output2FilePath)
+        feature3(batchGraph, streamFilePath, output3FilePath)
     except IOError as e:
         print e
         usage()
